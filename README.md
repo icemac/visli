@@ -12,4 +12,4 @@ Cut video files into slices.
 
 ## General usage
 
-* python visli.py <path to video>
+* python visli.py /path/to/video-file
