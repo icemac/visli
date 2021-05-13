@@ -1,17 +1,19 @@
-"""Cut video files into slices.
+OVERLAP_IN_S = 30
+FACTOR_LAST_SLICE = 1.3
 
-Each slice has an overlap of 30 seconds with the previous one.
-The last slice is sized up to 1.5 times of the other slices to prevent having
-a tiny last slice.
+doc = f"""Cut video files into slices.
+
+Each slice has an overlap of {OVERLAP_IN_S} seconds with the previous one.
+The last slice is sized up to {FACTOR_LAST_SLICE} times of the other slices to
+prevent having a tiny last slice.
 
 Requires Python 3.8+ and ffmpeg to be installed.
 """
+
 from datetime import timedelta
 import argparse
 import pathlib
 import subprocess
-
-OVERLAP_IN_S = 30
 
 
 def call(*args):
@@ -26,7 +28,7 @@ def to_hms(seconds):
     return str(timedelta(seconds=seconds))
 
 
-parser = argparse.ArgumentParser(usage="python visli.py", description=__doc__)
+parser = argparse.ArgumentParser(usage="python visli.py", description=doc)
 parser.add_argument('input', action="store", nargs='+',
                     help="input file(s), multiple times possible")
 parser.add_argument('-d', metavar='n', action="store", type=int, default=15,
@@ -56,7 +58,7 @@ for input in input_paths:
     for num, start_in_hms in enumerate(slice_starts_in_hms, 1):
         current_start_in_s = slice_starts_in_s[num - 1]
         remaining_in_s = lenght_in_s - current_start_in_s
-        if remaining_in_s < duration_in_s * 1.5:
+        if remaining_in_s < duration_in_s * FACTOR_LAST_SLICE:
             duration_in_hms = to_hms(remaining_in_s)
             call_break = True
         output = input.parents[0] / f'{input.stem}-{num}{input.suffix}'
