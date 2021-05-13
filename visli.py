@@ -1,5 +1,5 @@
 OVERLAP_IN_S = 30
-FACTOR_LAST_SLICE = 1.3
+FACTOR_LAST_SLICE = 1.5
 
 doc = f"""Cut video files into slices.
 
