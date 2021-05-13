@@ -1,11 +1,17 @@
 """Cut video files into slices.
 
-Requires ffmpeg to be installed.
+Each slice has an overlap of 30 seconds with the previous one.
+The last slice is sized up to 1.5 times of the other slices to prevent having
+a tiny last slice.
+
+Requires Python 3.8+ and ffmpeg to be installed.
 """
 from datetime import timedelta
 import argparse
 import pathlib
 import subprocess
+
+OVERLAP_IN_S = 30
 
 
 def call(*args):
@@ -30,8 +36,8 @@ parser.add_argument('-d', metavar='n', action="store", type=int, default=15,
 args = parser.parse_args()
 input_paths = [pathlib.Path(x) for x in args.input]
 duration_in_min = args.d
-duration_hms = to_hms(duration_in_min * 60)
-
+duration_in_s = duration_in_min * 60
+duration_in_hms = to_hms(duration_in_min * 60)
 
 for input in input_paths:
     # Taken from https://superuser.com/a/945604
@@ -41,18 +47,28 @@ for input in input_paths:
         '-show_entries', 'format=duration',
         '-of', 'default=noprint_wrappers=1:nokey=1',
         input)))
-    slice_starts = [
-        to_hms(x) for x in range(0, lenght_in_s, (duration_in_min * 60 - 30))]
+    slice_starts_in_s = [
+        x for x in range(0, lenght_in_s, (duration_in_s - OVERLAP_IN_S))]
+
+    slice_starts_in_hms = [to_hms(x) for x in slice_starts_in_s]
     print(f'Processing {input.name} ...')
-    for index, start in enumerate(slice_starts, 1):
-        output = input.parents[0] / f'{input.stem}-{index}{input.suffix}'
+    call_break = False
+    for num, start_in_hms in enumerate(slice_starts_in_hms, 1):
+        current_start_in_s = slice_starts_in_s[num - 1]
+        remaining_in_s = lenght_in_s - current_start_in_s
+        if remaining_in_s < duration_in_s * 1.5:
+            duration_in_hms = to_hms(remaining_in_s)
+            call_break = True
+        output = input.parents[0] / f'{input.stem}-{num}{input.suffix}'
         # Taken from https://www.arj.no/2018/05/18/trimvideo/
         call(
             'ffmpeg',
             '-i', input,
-            '-ss', start,
-            '-t', duration_hms,
+            '-ss', start_in_hms,
+            '-t', duration_in_hms,
             '-c:v', 'copy',
             '-c:a', 'copy',
             output
         )
+        if call_break:
+            break

@@ -4,7 +4,8 @@ Cut video files into slices.
 
 ## Requirements
 
-* ffmpeg installed and in path
+* Python 3.8+
+* ffmpeg installed and on $PATH
 
 ## Help
 
